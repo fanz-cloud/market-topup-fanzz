@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Market Topup Fanzz</title>
+
+<style>
+:root{
+ --bg1:#6366f1;--bg2:#22c55e;
+ --card:rgba(255,255,255,.9);
+ --text:#0f172a;--muted:#64748b;
+ --acc:#22c55e;
+}
+.dark{
+ --card:rgba(30,41,59,.92);
+ --text:#e5e7eb;--muted:#94a3b8;
+}
+*{box-sizing:border-box}
+body{
+ margin:0;font-family:Arial;
+ min-height:100vh;
+ background:linear-gradient(135deg,var(--bg1),var(--bg2));
+ color:var(--text)
+}
+header{
+ display:flex;align-items:center;gap:12px;
+ padding:14px;color:white;
+ background:rgba(0,0,0,.25);
+ backdrop-filter:blur(10px)
+}
+header img{
+ width:44px;height:44px;border-radius:12px;
+ object-fit:cover;background:#fff;cursor:pointer
+}
+.container{
+ max-width:900px;margin:auto;padding:14px;
+ display:grid;grid-template-columns:1fr;gap:16px
+}
+@media(min-width:768px){
+ .container{grid-template-columns:1fr 1fr}
+}
+.card{
+ background:var(--card);border-radius:20px;
+ padding:16px;box-shadow:0 20px 40px rgba(0,0,0,.18)
+}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+label{font-size:13px;font-weight:bold;color:var(--muted)}
+input,select{
+ padding:12px;border-radius:14px;
+ border:none;font-size:14px
+}
+.payinfo{
+ background:#ecfeff;padding:12px;
+ border-radius:14px;font-size:13px;margin-bottom:12px
+}
+.dark .payinfo{background:#0f766e;color:#fff}
+.total{
+ background:#eef2ff;padding:12px;
+ border-radius:14px;font-weight:bold;
+ text-align:center;margin-bottom:12px
+}
+button{
+ padding:12px;border-radius:14px;border:none;
+ font-weight:bold;background:var(--acc);
+ color:white;font-size:14px;cursor:pointer
+}
+.secondary{background:#334155}
+.invoice{border-top:1px dashed #94a3b8;padding-top:12px}
+.row{display:flex;justify-content:space-between;margin:6px 0}
+footer{text-align:center;font-size:12px;color:white;opacity:.8}
+
+/* Splash */
+#splash{
+ position:fixed;inset:0;
+ background:#0f172a;color:white;
+ display:flex;flex-direction:column;
+ align-items:center;justify-content:center;
+ z-index:9999
+}
+
+/* Toast */
+#toast{
+ position:fixed;bottom:20px;left:50%;
+ transform:translateX(-50%) translateY(80px);
+ background:#16a34a;color:white;
+ padding:14px 18px;border-radius:14px;
+ font-size:14px;opacity:0;
+ transition:.4s;z-index:9999
+}
+#toast.show{
+ opacity:1;transform:translateX(-50%) translateY(0)
+}
+</style>
+</head>
+
+<body>
+
+<div id="splash">
+ <img id="splashLogo" style="width:80px;border-radius:20px">
+ <h3>Loading...</h3>
+</div>
+
+<header>
+ <img id="logo">
+ <div>
+  <b id="webName">MARKET TOPUP GAME</b><br>
+  <small>by FANZ</small>
+ </div>
+</header>
+
+<input type="file" id="logoInput" hidden accept="image/*">
+
+<div class="container">
+
+<div class="card">
+ <div class="field">
+  <label>Jenis</label>
+  <select id="jenis" onchange="updateItem()">
+   <option value="topup">Top Up</option>
+   <option value="member">Membership</option>
+  </select>
+ </div>
+
+ <div class="field">
+  <label>Game</label>
+  <select id="game" onchange="updateItem()">
+   <option value="">-- Pilih Game --</option>
+   <option value="ml">Mobile Legends</option>
+   <option value="ff">Free Fire</option>
+  </select>
+ </div>
+
+ <div class="field">
+  <label>Nickname / Nama Akun</label>
+  <input id="nickname" placeholder="Contoh: FanzDarkSystem">
+ </div>
+
+ <div class="field">
+  <label>ID Game</label>
+  <input id="userid" placeholder="Masukkan ID sesuai game">
+ </div>
+
+ <div class="field">
+  <label>Cari Produk</label>
+  <input id="search" onkeyup="filterProduk()">
+ </div>
+
+ <div class="field">
+  <label>Produk</label>
+  <select id="item" onchange="hitungTotal()"></select>
+ </div>
+
+ <div class="field">
+  <label>Metode Pembayaran</label>
+  <select id="pay" onchange="updatePay();hitungTotal()">
+   <option>DANA</option>
+   <option>OVO</option>
+   <option>GOPAY</option>
+   <option>QRIS</option>
+   <option>CASH</option>
+  </select>
+ </div>
+
+ <div class="payinfo" id="payinfo">Pilih metode pembayaran</div>
+ <div class="total" id="total">Total: Rp 0</div>
+
+ <button onclick="preview()">Preview</button>
+ <button class="secondary" onclick="mode()">Dark / Light</button>
+</div>
+
+<div class="card" id="hasil"><i>Struk akan muncul di sini…</i></div>
+
+</div>
+
+<footer>© Market Topup Fanzz</footer>
+
+<div id="toast">Sukses</div>
+
+<script>
+/* ===== DATA TOPUP (TIDAK DIUBAH) ===== */
+const DATA={
+ ml:[
+ ["5 DM",2500],["12 DM",4000],["28 DM",8500],["36 DM",11000],
+ ["56 DM",16000],["85 DM",23500],["100 DM",27000],["144 DM",39000],
+ ["170 DM",46500],["240 DM",64000],["355 DM",94000],
+ ["425 DM",113000],["514 DM",133000],["712 DM",184000],
+ ["875 DM",218000],["1050 DM",266500],["1220 DM",310000],
+ ["1453 DM",372000],["1750 DM",442000],
+ ["2180 DM",525000],["2578 DM",626000],
+ ["4020 DM",961000],["7660 DM",1839000]
+ ],
+ ff:[
+ ["5 Diamond",1000],["12 Diamond",2000],["20 Diamond",3500],
+ ["30 Diamond",5000],["50 Diamond",8000],["70 Diamond",10000],
+ ["100 Diamond",14000],["140 Diamond",19000],["150 Diamond",21000],
+ ["210 Diamond",28000],["355 Diamond",48000],["425 Diamond",56000],
+ ["500 Diamond",68000],["720 Diamond",95000],["860 Diamond",112000],
+ ["1000 Diamond",135000],["1075 Diamond",145000],
+ ["1440 Diamond",190000],["1450 Diamond",192000],
+ ["2000 Diamond",260000],["2180 Diamond",285000],
+ ["3640 Diamond",470000],["7290 Diamond",930000]
+ ],
+ member_ml:[
+  ["1x WDP",28500],["2x WDP",56500],["3x WDP",84500],
+  ["4x WDP",112500],["5x WDP",140500],
+  ["Twilight Pass",144500]
+ ],
+ member_ff:[
+  ["Membership Mingguan",30000],
+  ["Membership Bulanan",80000]
+ ]
+};
+
+const ADMIN={DANA:500,OVO:500,GOPAY:500,QRIS:500,CASH:1500};
+const PAYINFO={
+ DANA:"0878 1966 1875 / 0877 9523 7332",
+ OVO:"0877 9523 7332",
+ GOPAY:"0878 1966 1875",
+ QRIS:"Silakan minta QR ke admin",
+ CASH:"Silakan hubungi admin"
+};
+
+let dark=false,harga=0,fee=0,cache=[];
+
+/* ===== AUDIO NOTIF ===== */
+const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+function playDing(){
+ const o=audioCtx.createOscillator();
+ const g=audioCtx.createGain();
+ o.type="sine";o.frequency.value=880;
+ g.gain.value=0.15;
+ o.connect(g);g.connect(audioCtx.destination);
+ o.start();
+ setTimeout(()=>o.stop(),180);
+}
+
+/* ===== INIT ===== */
+logo.onclick=()=>logoInput.click();
+logoInput.onchange=e=>{
+ let r=new FileReader();
+ r.onload=()=>{
+  localStorage.logo=r.result;
+  logo.src=r.result;
+  splashLogo.src=r.result;
+ };
+ r.readAsDataURL(e.target.files[0]);
+};
+
+logo.src=localStorage.logo||"https://dummyimage.com/80x80/4f46e5/fff&text=LOGO";
+splashLogo.src=logo.src;
+setTimeout(()=>splash.remove(),1200);
+
+/* ===== LOGIC ===== */
+function mode(){
+ dark=!dark;
+ document.body.className=dark?"dark":"";
+}
+function updateItem(){
+ item.innerHTML="";search.value="";
+ if(!game.value)return;
+ cache=jenis.value==="member"?DATA["member_"+game.value]:DATA[game.value];
+ cache.forEach((d,i)=>{
+  let o=new Option(d[0]+" - Rp "+d[1].toLocaleString(),d[1]);
+  if(i<5)o.text+=" ★";
+  item.add(o);
+ });
+ hitungTotal();
+}
+function filterProduk(){
+ let k=search.value.toLowerCase();
+ item.innerHTML="";
+ cache.filter(p=>p[0].toLowerCase().includes(k))
+ .forEach(d=>item.add(new Option(d[0]+" - Rp "+d[1].toLocaleString(),d[1])));
+ hitungTotal();
+}
+function hitungTotal(){
+ harga=parseInt(item.value||0);
+ fee=ADMIN[pay.value]||0;
+ total.innerText="Total: Rp "+(harga+fee).toLocaleString();
+}
+function updatePay(){
+ payinfo.innerHTML="<b>"+pay.value+"</b><br>"+PAYINFO[pay.value];
+}
+function toast(msg){
+ let t=document.getElementById("toast");
+ t.innerText=msg;
+ t.classList.add("show");
+ setTimeout(()=>t.classList.remove("show"),2200);
+}
+function preview(){
+ if(!userid.value||!nickname.value||harga<=0){
+  alert("Lengkapi data");return;
+ }
+ let trx="TRX"+Date.now().toString().slice(-6);
+ let totalBayar=harga+fee;
+ let pesan=`TRX ${trx}
+Produk: ${item.options[item.selectedIndex].text}
+ID: ${userid.value}
+Nickname: ${nickname.value}
+Total: Rp ${totalBayar}
+Bayar: ${pay.value}`;
+ let wa="https://wa.me/6287795237332?text="+encodeURIComponent(pesan);
+
+ hasil.innerHTML=`
+ <div class="invoice">
+  <div class="row"><b>ID</b><span>${trx}</span></div>
+  <div class="row"><b>Produk</b><span>${item.options[item.selectedIndex].text}</span></div>
+  <div class="row"><b>Total</b><span>Rp ${totalBayar.toLocaleString()}</span></div>
+  <div class="payinfo">${PAYINFO[pay.value]}</div>
+  <button onclick="navigator.clipboard.writeText(\`${pesan}\`)">Salin Pesan</button>
+  <a href="${wa}" target="_blank"><button>Kirim WhatsApp</button></a>
+ </div>`;
+ playDing();
+ toast("Struk berhasil dibuat ✔");
+}
+</script>
+
+</body>
+</html>
